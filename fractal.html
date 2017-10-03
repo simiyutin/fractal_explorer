@@ -73,6 +73,8 @@
         uniform float zoom;
         uniform vec2 shift;
 
+        uniform sampler2D texSampler;
+
         bool in_square() {
             float x = zPos[0];
             float y = zPos[1];
@@ -101,7 +103,8 @@
 
         vec4 colorMapping(float n, vec2 z) {
             float coef = n / maxIterations;
-            return lerp(WHITE, CHERRY, coef);
+            return texture2D(texSampler, vec2(coef, 0.5));
+//            return lerp(WHITE, CHERRY, coef);
         }
 
 
@@ -114,9 +117,8 @@
                 n += 1.0;
                 z = cpow2(z) + c;
 
-                if (n >= 0.0 && bailoutLimit(z)) {
+                if (bailoutLimit(z)) {
                     color = colorMapping(n, z);
-//                    color = vec4(1.0, 1.0, 1.0, 1.0);
                     break;
                 }
             }
@@ -225,7 +227,8 @@
         shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
         shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
         shaderProgram.zoomUniform = gl.getUniformLocation(shaderProgram, "zoom");
-        shaderProgram.shiftUniform = gl.getUniformLocation(shaderProgram, "shift")
+        shaderProgram.shiftUniform = gl.getUniformLocation(shaderProgram, "shift");
+        shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "texSampler");
     }
 
 
@@ -260,14 +263,29 @@
         triangleVertexColorBuffer.numItems = 3;
     }
 
-    var near = 0;
-    function getZ() {
-        var res = -1.0 / (near / 100 + 0.1);
-        return res;
+    var texture;
+    function initTexture() {
+        texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        var oneDTextureTexels = new Uint8Array([
+            255,0,0,255,
+            0,255,0,255,
+            0,0,255,255
+        ]);
+        var width = 3;
+        var height = 1;
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, oneDTextureTexels);
+        //todo what does it do
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        //////////////////////
+        gl.bindTexture(gl.TEXTURE_2D, null);
     }
 
     var zoom = 1;
-    var shift = [0, 0];
+    var shift = [-0.2, 0];
     var prevPos = [0, 0];
 
     function drawScene() {
@@ -294,13 +312,11 @@
         gl.uniform1f(shaderProgram.zoomUniform, zoom);
         gl.uniform2f(shaderProgram.shiftUniform, shift[0], shift[1]);
 
-        gl.drawArrays(gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems);
-    }
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.uniform1i(shaderProgram.samplerUniform, 0);
 
-    function frame() {
-        drawScene();
-        ++near;
-        requestAnimationFrame(frame);
+        gl.drawArrays(gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems);
     }
 
     function toRel(absPos) {
@@ -313,10 +329,13 @@
         return [relPos[0] * scale, relPos[1] * scale];
     }
 
+
+
     function webGLStart() {
         initGL();
         initShaders();
         initBuffers();
+        initTexture();
 
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.enable(gl.DEPTH_TEST);
