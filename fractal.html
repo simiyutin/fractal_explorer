@@ -284,6 +284,50 @@
         gl.bindTexture(gl.TEXTURE_2D, null);
     }
 
+    function initListeners() {
+        window.addEventListener('wheel', function(e) {
+            var factor = 0.98;
+            var zoom0 = 0;
+            var zoom1 = 0;
+
+            if (e.deltaY < 0) {
+                zoom0 = zoom;
+                zoom1 = zoom * factor;
+                zoom = zoom1;
+            }
+
+            if (e.deltaY > 0) {
+                zoom0 = zoom;
+                zoom1 = zoom / factor;
+                zoom = zoom1;
+            }
+
+            var rel = toRel([e.x - window.innerWidth / 2 , e.y - window.innerHeight / 2]);
+            var scale = (zoom1 - zoom0);
+            var delta = [rel[0] * scale, rel[1] * scale];
+            shift[0] -= delta[0] * 2;
+            shift[1] += delta[1] * 2;
+
+            drawScene();
+        });
+
+        window.addEventListener('mousedown', function(e) {
+            prevPos[0] = e.x;
+            prevPos[1] = e.y;
+        });
+
+        window.addEventListener('mousemove', function(e) {
+            if (e.buttons === 1 || e.buttons === 3) {
+                var absPos = [prevPos[0] - e.x, e.y - prevPos[1]];
+                var relPos = toRel(absPos);
+                shift[0] += relPos[0] * zoom * 2;
+                shift[1] += relPos[1] * zoom * 2;
+                prevPos = [e.x, e.y];
+                drawScene();
+            }
+        });
+    }
+
     var zoom = 1;
     var shift = [-0.2, 0];
     var prevPos = [0, 0];
@@ -336,51 +380,10 @@
         initShaders();
         initBuffers();
         initTexture();
+        initListeners();
 
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.enable(gl.DEPTH_TEST);
-
-        window.addEventListener('wheel', function(e) {
-            var factor = 0.98;
-            var zoom0 = 0;
-            var zoom1 = 0;
-
-            if (e.deltaY < 0) {
-                zoom0 = zoom;
-                zoom1 = zoom * factor;
-                zoom = zoom1;
-            }
-
-            if (e.deltaY > 0) {
-                zoom0 = zoom;
-                zoom1 = zoom / factor;
-                zoom = zoom1;
-            }
-
-            var rel = toRel([e.x - window.innerWidth / 2 , e.y - window.innerHeight / 2]);
-            var scale = (zoom1 - zoom0);
-            var delta = [rel[0] * scale, rel[1] * scale];
-            shift[0] -= delta[0] * 2;
-            shift[1] += delta[1] * 2;
-
-            drawScene();
-        });
-
-        window.addEventListener('mousedown', function(e) {
-            prevPos[0] = e.x;
-            prevPos[1] = e.y;
-        });
-
-        window.addEventListener('mousemove', function(e) {
-            if (e.buttons === 1 || e.buttons === 3) {
-                var absPos = [prevPos[0] - e.x, e.y - prevPos[1]];
-                var relPos = toRel(absPos);
-                shift[0] += relPos[0] * zoom * 2;
-                shift[1] += relPos[1] * zoom * 2;
-                prevPos = [e.x, e.y];
-                drawScene();
-            }
-        });
 
         drawScene();
     }
