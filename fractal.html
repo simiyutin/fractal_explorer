@@ -322,15 +322,28 @@
         gl.enable(gl.DEPTH_TEST);
 
         window.addEventListener('wheel', function(e) {
-            var factor = 0.99;
+            var factor = 0.98;
+            var zoom0 = 0;
+            var zoom1 = 0;
+
             if (e.deltaY < 0) {
-                console.log('scrolling up');
-                zoom *= factor;
+                zoom0 = zoom;
+                zoom1 = zoom * factor;
+                zoom = zoom1;
             }
+
             if (e.deltaY > 0) {
-                console.log('scrolling down');
-                zoom /= factor;
+                zoom0 = zoom;
+                zoom1 = zoom / factor;
+                zoom = zoom1;
             }
+
+            var rel = toRel([e.x - window.innerWidth / 2 , e.y - window.innerHeight / 2]);
+            var scale = (zoom1 - zoom0);
+            var delta = [rel[0] * scale, rel[1] * scale];
+            shift[0] -= delta[0] * 2;
+            shift[1] += delta[1] * 2;
+
             drawScene();
         });
 
@@ -341,13 +354,11 @@
 
         window.addEventListener('mousemove', function(e) {
             if (e.buttons === 1 || e.buttons === 3) {
-                console.log('moving');
                 var absPos = [prevPos[0] - e.x, e.y - prevPos[1]];
                 var relPos = toRel(absPos);
                 shift[0] += relPos[0] * zoom * 2;
                 shift[1] += relPos[1] * zoom * 2;
                 prevPos = [e.x, e.y];
-                console.log(shift);
                 drawScene();
             }
         });
