@@ -58,10 +58,9 @@
         #define complexPower(z,p) vec2(polar(pow(length(z), float(p)), float(p) * complexArg(z)))
         #define RED vec4(1.0, 0.0, 0.0, 1.0)
         #define BLACK vec4(0.0, 0.0, 0.0, 1.0)
-        #define BLACK vec4(0.0, 0.0, 0.0, 1.0)
         #define CHERRY vec4(0.82, 0.08, 0.08, 1.0)
         #define WHITE vec4(1.0, 1.0, 1.0, 1.0)
-        #define maxIterations 50.0
+        #define maxIterations 300.0
         #define SCALE_FACTOR 3.0
 
 
@@ -134,7 +133,7 @@
                 gl_FragColor = Mandelbrot(scaledPos);
 //                gl_FragColor = vColor;
             } else {
-                gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+                gl_FragColor = BLACK;
             }
         }
     </script>
@@ -268,7 +267,7 @@
         texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
         var oneDTextureTexels = new Uint8Array([
-            255,0,0,255,
+            255,255,255,255,
             0,255,0,255,
             0,0,255,255
         ]);
@@ -326,6 +325,10 @@
                 drawScene();
             }
         });
+
+
+        // POWER OF TRANSFORMATION
+        // MAX NUMBER OF ITERATIONS
     }
 
     var zoom = 1;
