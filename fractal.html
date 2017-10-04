@@ -27,6 +27,16 @@
             border-radius: 8px;
         }
 
+        .noselect {
+            -webkit-touch-callout: none; /* iOS Safari */
+            -webkit-user-select: none; /* Safari */
+            -khtml-user-select: none; /* Konqueror HTML */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+        }
+
         .slider {
             -webkit-appearance: none;
             width: 100%;
@@ -210,8 +220,7 @@
                 gl = canvas.getContext("experimental-webgl");
                 gl.viewportWidth = canvas.width;
                 gl.viewportHeight = canvas.height;
-            } catch (e) {
-            }
+            } catch (e) {}
             if (!gl) {
                 alert("Could not initialise WebGL, sorry :-(");
             }
@@ -379,10 +388,10 @@
 
             canvas.addEventListener('mousemove', function(e) {
                 if (e.buttons === 1 || e.buttons === 3) {
-                    var absPos = [prevPos[0] - e.x, e.y - prevPos[1]];
+                    var absPos = [prevPos[0] - e.x, prevPos[1] - e.y];
                     var relPos = toRel(absPos);
                     shift[0] += relPos[0] * zoom * 2;
-                    shift[1] += relPos[1] * zoom * 2;
+                    shift[1] -= relPos[1] * zoom * 2;
                     prevPos = [e.x, e.y];
                     drawScene();
                 }
@@ -411,12 +420,28 @@
             };
         }
 
+        function setProjectionMatrix() {
+            var aspect_ratio = gl.viewportWidth / gl.viewportHeight;
+            var left, bottom;
+            left = -1;
+            bottom = -1 / aspect_ratio;
+            if (aspect_ratio < 1) {
+                left = -aspect_ratio;
+                bottom = -1;
+            }
+            var right = -left;
+            var top = -bottom;
+
+            // left, right, bottom, top, near, far
+            mat4.ortho(left, right, bottom, top, 0.1, 100, pMatrix);
+        }
+
         function drawScene() {
 
             gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-            mat4.perspective(55, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+            setProjectionMatrix();
 
             mat4.identity(mvMatrix);
 
@@ -472,7 +497,7 @@
 
 </head>
 <body onload="webGLStart();">
-<div id="slidecontainer">
+<div id="slidecontainer" class="noselect">
     <input type="range" min="1" max="10" value="2" class="slider" id="powerRange">
     <p>Power: <span id="powerValue"></span></p>
     <input type="range" min="1" max="300" value="50" class="slider" id="iterRange">
